@@ -2,7 +2,8 @@ import numpy as np
 import cv2
 import math as mt
 import matplotlib.pyplot as plt
-
+import pytesseract
+from PIL import Image
 
 class crotal():
     offset = 5
@@ -87,6 +88,11 @@ class crotal():
                 cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
             angle = theta*(180/mt.pi)
 
+
+
+
+
+
         #Corregimos angulo
         if angle >90:
             angle=angle-90
@@ -102,15 +108,47 @@ class crotal():
         plt.imshow(umbralizada_corregida,cmap="gray"),plt.show()
 
 
-        for i in range(0,umbralizada_corregida.shape[0]):
-            cambio = 0
-            print(i)
-            for j in range(0,umbralizada_corregida.shape[1]-1):
-                print(cambio)
-                if umbralizada_corregida[umbralizada_corregida.shape[0]-i-1,j]!=umbralizada_corregida[i,j+1]:
-                    cambio+=1
-            if cambio == 2:
-                cv2.line(self.img_color,(1,i),(100,i))
+        _, contours, hier = cv2.findContours(umbralizada_corregida, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        result = cv2.cvtColor(src=umbralizada_corregida, code=cv2.COLOR_GRAY2RGB)
+        areas = [cv2.contourArea(c) for c in contours]
+        j = np.argmax(areas)  # indice del contorno con mayor area
+        x, y, w, h = cv2.boundingRect(contours[j])
+        cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        plt.imshow(result), plt.show()
+
+        image_to_recognise = umbralizada_corregida[int(y+h/2):int(y+h),x:int(x+w)]
+        image_to_recognise = 255 * np.ones(image_to_recognise.shape, dtype="uint8") - image_to_recognise
+        kernel = np.ones((3,3),dtype="uint8")
+
+        image_to_recognise = cv2.erode(image_to_recognise,kernel,iterations=1)
+        plt.imshow(image_to_recognise, cmap="gray"), plt.show()
+
+
+        _, contours, hier = cv2.findContours(image_to_recognise, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        result = cv2.cvtColor(src=image_to_recognise,code=cv2.COLOR_GRAY2RGB)
+
+        ROI = np.array([])
+        for i in range(0,len(contours)):
+            cv2.drawContours(image=result,contours=contours,contourIdx=i,color=(255,0,0))
+            x, y, w, h = cv2.boundingRect(contours[i])
+            ROI = np.append(ROI,[x,y,x+w,y+h])
+            cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        ROI = np.reshape(ROI,(-1,4))
+
+
+
+
+
+
+        plt.imshow(result), plt.show()
+
+        text = Image.fromarray(image_to_recognise)
+        text = pytesseract.image_to_string(text)
+        print("text: ",text)
+
+
+
 
 
         #TODO: Pasar tesseract
@@ -141,4 +179,38 @@ class crotal():
              ang = mt.atan2(y2 - y1, x2 - x1)
              cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
              angle = np.append(angle, ang)
+'''
+'''
+
+        # noise removal
+        kernel = np.ones((3, 3), np.uint8)
+        opening = cv2.morphologyEx(image_to_recognise, cv2.MORPH_OPEN, kernel, iterations=2)
+
+        # sure background area
+        sure_bg = cv2.dilate(opening, kernel, iterations=3)
+
+        # Finding sure foreground area
+        dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+        ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
+
+        # Finding unknown region
+        sure_fg = np.uint8(sure_fg)
+        unknown = cv2.subtract(sure_bg, sure_fg)
+
+        # Marker labelling
+        ret, markers = cv2.connectedComponents(sure_fg)
+
+        # Add one to all labels so that sure background is not 0, but 1
+        markers = markers + 1
+
+        # Now, mark the region of unknown with zero
+        markers[unknown == 255] = 0
+
+        result = cv2.cvtColor(src=image_to_recognise,code=cv2.COLOR_GRAY2RGB)
+
+        markers = cv2.watershed(result,markers)
+        result[markers == -1] = [255, 0, 0]
+        
+                plt.imshow(result), plt.show()
+
 '''
