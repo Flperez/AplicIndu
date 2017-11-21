@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import pytesseract
 from PIL import Image
 from filtro import filtro
+from keras.models import model_from_json
+
 
 class crotal():
     offset = 5
-    def __init__(self,path,method="vecino"):
+    def __init__(self,path,path_to_json,path_to_h5,method="vecino"):
 
         # Nos interesa tener la imagen a color para luego pintar la recta reconocida
         self.img_color = cv2.imread(path)
@@ -16,6 +18,16 @@ class crotal():
             print(path," imagen vacia")
             self.text=""
         else:
+            # Modelo para detectar los numeros
+
+            # load json and create model
+            json_file = open(path_to_json, 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            self.loaded_model = model_from_json(loaded_model_json)
+            # load weights into new model
+            self.loaded_model.load_weights(path_to_h5)
+
             # Utilizaremos siempre la imagen en escalada de grises
             img_gray = cv2.cvtColor(src=self.img_color,code=cv2.COLOR_RGB2GRAY)
             img_gray = img_gray[0:img_gray.shape[0] - self.offset, :]
@@ -132,7 +144,8 @@ class crotal():
         for i in range(0,len(contours)):
             cv2.drawContours(image=result,contours=contours,contourIdx=i,color=(255,0,0))
             x, y, w, h = cv2.boundingRect(contours[i])
-            ROI = np.append(ROI,[x,y,x+w,y+h])
+            if w<h:
+                ROI = np.append(ROI,[x,y,x+w,y+h])
             cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         ROI = np.reshape(ROI,(-1,4))
@@ -165,8 +178,18 @@ class crotal():
             box = ROI[index,:]
 
             character = image_to_recognise[box[1]:box[3],box[0]:box[2]]
+            character = cv2.dilate(character,kernel,iterations=1)
             text = Image.fromarray(character)
             print(pytesseract.image_to_string(text))
+            character = cv2.resize(character,(28,28))
+
+            batch_size = 128
+            xcharacter = np.reshape(character,(1,784))
+            xcharacter = xcharacter.astype('float32')
+
+            predictions = self.loaded_model.predict([xcharacter], batch_size=batch_size)
+            print("El numero de la imagen es: ", np.argmax(predictions))
+
             plt.imshow(character,cmap="gray"), plt.title("character"), plt.show()
 
             cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))

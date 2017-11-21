@@ -8,6 +8,9 @@ import math as mt
 from crotal import crotal
 import glob,os
 import csv
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.models import model_from_json
 
 path_to_directory = "CrotalesTest/TestSamples"
 
@@ -16,7 +19,8 @@ if __name__ == "__main__":
 
     ################ Prueba con un solo crotal ####################
 
-    microtal = crotal(path='Muestra/Crotal7.TIF')
+    microtal = crotal(path='Muestra/Crotal3.TIF',path_to_json="modelos/model.json",
+                      path_to_h5="modelos/model.h5")
     #pintamos los resultados del algoritmo
     fig,axes = plt.subplots(nrows=2,ncols=2)
     axes[0, 0].imshow(microtal.img_color,cmap="gray")
