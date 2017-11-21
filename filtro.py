@@ -106,7 +106,7 @@ class filtro:
         for i in range(0, len(rects)):
             for j in range(0, len(rects)):
                 if areas[i] <= areas[j] and i != j:
-                    if filtro.contained(rects[i], rects[j]) == True:
+                    if filtro.contained(self,rects[i], rects[j]) == True:
                         deleted = np.append(deleted, i)
 
         deleted = deleted.astype(int)

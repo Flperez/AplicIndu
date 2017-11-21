@@ -4,6 +4,7 @@ import math as mt
 import matplotlib.pyplot as plt
 import pytesseract
 from PIL import Image
+from filtro import filtro
 
 class crotal():
     offset = 5
@@ -105,7 +106,7 @@ class crotal():
         M = cv2.getRotationMatrix2D((self.img_umbralizada.shape[1] / 2, self.img_umbralizada.shape[0] / 2), self.angle,
                                     1)
         umbralizada_corregida = cv2.warpAffine(self.img_umbralizada, M, (self.img_umbralizada.shape[1], self.img_umbralizada.shape[0]))
-        plt.imshow(umbralizada_corregida,cmap="gray"),plt.show()
+        plt.imshow(umbralizada_corregida,cmap="gray"),plt.title("umbralizado corregido"),plt.show()
 
 
         _, contours, hier = cv2.findContours(umbralizada_corregida, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -114,14 +115,14 @@ class crotal():
         j = np.argmax(areas)  # indice del contorno con mayor area
         x, y, w, h = cv2.boundingRect(contours[j])
         cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        plt.imshow(result), plt.show()
+        plt.imshow(result),plt.title("umbralizado corregido con BB"), plt.show()
 
         image_to_recognise = umbralizada_corregida[int(y+h/2):int(y+h),x:int(x+w)]
         image_to_recognise = 255 * np.ones(image_to_recognise.shape, dtype="uint8") - image_to_recognise
         kernel = np.ones((3,3),dtype="uint8")
 
-        image_to_recognise = cv2.erode(image_to_recognise,kernel,iterations=1)
-        plt.imshow(image_to_recognise, cmap="gray"), plt.show()
+        image_to_recognise = cv2.erode(image_to_recognise,kernel,iterations=3)
+        plt.imshow(image_to_recognise, cmap="gray"),plt.title("image2recognise erode"), plt.show()
 
 
         _, contours, hier = cv2.findContours(image_to_recognise, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -135,11 +136,49 @@ class crotal():
             cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         ROI = np.reshape(ROI,(-1,4))
+        ROI = ROI.astype(int)
+        result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
+        for i in range(0, len(ROI)):
+            cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
+            cv2.rectangle(result, (ROI[i,0],ROI[i,1] ), (ROI[i,2], ROI[i,3]), (0, 255, 0), 2)
+        plt.imshow(result),plt.title("Cajas sin filtrar"), plt.show()
 
 
 
 
+        mifiltro = filtro(ROI)
+        ROI = mifiltro.filtrar()
+        result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
+        for i in range(0, len(ROI)):
+            cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
+            cv2.rectangle(result, (ROI[i, 0], ROI[i, 1]), (ROI[i, 2], ROI[i, 3]), (0, 255, 0), 2)
+        plt.imshow(result), plt.title("Cajas filtradas"), plt.show()
 
+        areasROI = [(ROI[k, 0] - ROI[k, 2]) * (ROI[k, 1] - ROI[k, 3]) for k in range(0, len(ROI))]
+        list_ordered = sorted(areasROI)
+        list_ordered = list(reversed(list_ordered))
+        list_ordered=list_ordered[:5]
+
+        result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
+        for i in range(0, len(list_ordered)):
+            index = areasROI.index(list_ordered[i])
+            box = ROI[index,:]
+
+            character = image_to_recognise[box[1]:box[3],box[0]:box[2]]
+            text = Image.fromarray(character)
+            print(pytesseract.image_to_string(text))
+            plt.imshow(character,cmap="gray"), plt.title("character"), plt.show()
+
+            cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
+            cv2.rectangle(result, (box[0], box[1]), (box [2], box[3]), (0, 255, 0), 2)
+
+
+            # TODO: reconecer el caracter y saber en que posicion esta
+
+
+
+
+        plt.imshow(result), plt.title("Las 5 cajas mas grandes"), plt.show()
 
         plt.imshow(result), plt.show()
 
