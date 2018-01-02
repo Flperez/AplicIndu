@@ -97,9 +97,12 @@ if __name__ == "__main__":
         data = [100/total*Nempty,100/total*Nfail,100/total*Nwin]
 
         fig, ax = plt.subplots()
-
+        plt.ylim(0, 100)
         plt.bar(ind,data)
         plt.xticks(ind,('Vacio', 'Fallos', 'Aciertos'))
+        plt.ylabel('Porcentaje(%)')
+        plt.xlabel('Resultados')
+        plt.title('0 iteraciones')
         plt.show()
 
 

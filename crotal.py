@@ -166,7 +166,6 @@ class crotal():
 
     def detection_text(self,img):
 
-        #TODO: Crear BB para el texto
         M = cv2.getRotationMatrix2D((self.img_umbralizada.shape[1] / 2, self.img_umbralizada.shape[0] / 2), self.angle,
                                     1)
         umbralizada_corregida = cv2.warpAffine(self.img_umbralizada, M, (self.img_umbralizada.shape[1], self.img_umbralizada.shape[0]))
