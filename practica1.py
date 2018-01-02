@@ -1,10 +1,5 @@
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks_cwt
-from scipy.signal import argrelextrema
-import scipy
-import math as mt
 from crotal import crotal
 import glob,os
 import csv
@@ -15,9 +10,9 @@ if __name__ == "__main__":
 
 
     ################ Prueba con un solo crotal ####################
-    prueba = False
+    prueba = True
     if prueba == True:
-        microtal = crotal(path='/home/f/PycharmProjects/AplicIndu/CrotalesTest/TestSamples/0085.TIF')
+        microtal = crotal(path='/home/f/PycharmProjects/AplicIndu/CrotalesTest/TestSamples/0002.TIF')
         #pintamos los resultados del algoritmo
         fig,axes = plt.subplots(nrows=2,ncols=2)
         axes[0, 0].imshow(microtal.img_color,cmap="gray")
@@ -36,7 +31,7 @@ if __name__ == "__main__":
 
 
     #######################   Test ################################
-    test = True
+    test = False
     if test == True:
         reader = list(csv.reader(open("CrotalesTest/GroundTruth.csv")))
 

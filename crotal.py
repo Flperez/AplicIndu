@@ -153,7 +153,7 @@ class crotal():
         angle = -mt.atan2(incfil,inccol)*(180/mt.pi)
         box = np.int0(box)
         cv2.drawContours(result, [box], 0, (0, 0, 255), 2)
-        #plt.imshow(result),plt.title("caja BB"), plt.show()
+        plt.imshow(result),plt.title("Calculo angulo"), plt.show()
 
 
 
@@ -169,7 +169,7 @@ class crotal():
         M = cv2.getRotationMatrix2D((self.img_umbralizada.shape[1] / 2, self.img_umbralizada.shape[0] / 2), self.angle,
                                     1)
         umbralizada_corregida = cv2.warpAffine(self.img_umbralizada, M, (self.img_umbralizada.shape[1], self.img_umbralizada.shape[0]))
-        #plt.imshow(umbralizada_corregida,cmap="gray"),plt.title("umbralizado corregido"),plt.show()
+        plt.imshow(umbralizada_corregida,cmap="gray"),plt.title("umbralizado corregido"),plt.show()
 
 
         _, contours, hier = cv2.findContours(umbralizada_corregida, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -178,14 +178,14 @@ class crotal():
         j = np.argmax(areas)  # indice del contorno con mayor area
         x, y, w, h = cv2.boundingRect(contours[j])
         cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        #plt.imshow(result),plt.title("umbralizado corregido con BB"), plt.show()
+        plt.imshow(result),plt.title("umbralizado corregido con BB"), plt.show()
 
         image_to_recognise = umbralizada_corregida[int(y+h/2):int(y+h),x+10:int(x+w)-10]
         image_to_recognise = 255 * np.ones(image_to_recognise.shape, dtype="uint8") - image_to_recognise
         kernel = np.ones((3,3),dtype="uint8")
 
         image_to_recognise = cv2.dilate(image_to_recognise,kernel,iterations=0)
-        #plt.imshow(image_to_recognise, cmap="gray"),plt.title("image2recognise dilate"), plt.show()
+        plt.imshow(image_to_recognise, cmap="gray"),plt.title("Imagen en la que buscamos BB"), plt.show()
 
 
         _, contours, hier = cv2.findContours(image_to_recognise, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -205,7 +205,7 @@ class crotal():
         for i in range(0, len(ROI)):
             cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
             cv2.rectangle(result, (ROI[i,0],ROI[i,1] ), (ROI[i,2], ROI[i,3]), (0, 255, 0), 2)
-        #plt.imshow(result),plt.title("Cajas sin filtrar"), plt.show()
+        plt.imshow(result),plt.title("Cajas sin filtrar"), plt.show()
 
 
 
@@ -222,7 +222,7 @@ class crotal():
         for i in range(0, len(ROI)):
             cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
             cv2.rectangle(result, (ROI[i, 0], ROI[i, 1]), (ROI[i, 2], ROI[i, 3]), (0, 255, 0), 2)
-        #plt.imshow(result), plt.title("Cajas filtradas"), plt.show()
+        plt.imshow(result), plt.title("Cajas filtradas"), plt.show()
 
         areasROI = [(ROI[k, 0] - ROI[k, 2]) * (ROI[k, 1] - ROI[k, 3]) for k in range(0, len(ROI))]
         list_ordered = sorted(areasROI)
@@ -236,7 +236,7 @@ class crotal():
             box = ROI[index, :]
             cv2.rectangle(result, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
-       # plt.imshow(result), plt.title("Las cajas mas grandes"), plt.show()
+        plt.imshow(result), plt.title("Cajas seleccionadas"), plt.show()
 
         if list_cajas:
             ymin,ymax = find_limits(list_cajas)
@@ -246,7 +246,7 @@ class crotal():
 
         result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
         text_image = result[ymin:ymax,:]
-        #plt.imshow(text_image), plt.title("ROI to tesseract"), plt.show()
+        plt.imshow(text_image), plt.title("ROI to tesseract"), plt.show()
 
         return text_image
 
