@@ -2,15 +2,57 @@ import numpy as np
 import cv2
 import math as mt
 import matplotlib.pyplot as plt
-import pytesseract
-from PIL import Image
 from filtro import filtro
-from keras.models import model_from_json
+import operator
+import os,re
+
+class caja():
+    def __init__(self,x,y,w,h):
+        self.xmin = x
+        self.ymin = y
+        self.w = w
+        self.h = h
+        self.xmax = x+w
+        self.ymax = y+h
+        self.area = w*h
+
+def find_limits(list_cajas):
+    fin = 0
+
+    #find ymin
+    while fin == 0:
+        ymin = min(list_cajas, key=operator.attrgetter('ymin')).ymin
+        salida = 0
+        for i in range(0,len(list_cajas)):
+           # print("ymin: ",ymin,"list_caja.ymin: ",list_cajas[i].ymin)
+            if abs(ymin-list_cajas[i].ymin)>50:
+                list_cajas = [item for item in list_cajas if item.ymin != ymin]
+                salida = 1
+                break
+        if salida == 0:
+            fin = 1
+
+    fin = 0
+
+    # find ymax
+    ymax = max(list_cajas, key=operator.attrgetter('ymax')).ymax
+    '''
+    while fin == 0:
+        ymax = max(list_cajas, key=operator.attrgetter('ymax')).ymax
+        salida = 0
+        for i in range(0, len(list_cajas)):
+            if abs(ymax - list_cajas[i].ymax) > 50:
+                list_cajas = [item for item in list_cajas if item.ymax != ymax]
+                salida = 1
+        if salida == 0:
+            fin = 1
+    '''
+    return ymin,ymax
 
 
 class crotal():
     offset = 5
-    def __init__(self,path,path_to_json,path_to_h5,method="vecino"):
+    def __init__(self,path,method="vecino"):
 
         # Nos interesa tener la imagen a color para luego pintar la recta reconocida
         self.img_color = cv2.imread(path)
@@ -18,15 +60,8 @@ class crotal():
             print(path," imagen vacia")
             self.text=""
         else:
-            # Modelo para detectar los numeros
 
-            # load json and create model
-            json_file = open(path_to_json, 'r')
-            loaded_model_json = json_file.read()
-            json_file.close()
-            self.loaded_model = model_from_json(loaded_model_json)
-            # load weights into new model
-            self.loaded_model.load_weights(path_to_h5)
+
 
             # Utilizaremos siempre la imagen en escalada de grises
             img_gray = cv2.cvtColor(src=self.img_color,code=cv2.COLOR_RGB2GRAY)
@@ -41,7 +76,9 @@ class crotal():
             self.img_corregida = cv2.warpAffine(img_gray,M,(self.img_umbralizada.shape[1],self.img_umbralizada.shape[0]))
 
             # Una vez corregida la imagen pasamos a reconocer el texto
-            self.text = crotal.recognition_text(self=self,img=self.img_corregida)
+            self.text_image = crotal.detection_text(self=self,img=self.img_corregida)
+            self.text = crotal.tesseract(self=self,img=self.text_image,path=path)
+
 
 
 
@@ -82,9 +119,8 @@ class crotal():
 
 
     def calcula_angle(self,img_umbralizada,img):
-
+        '''
         edges = cv2.Canny(img_umbralizada, 50, 150, apertureSize=3)
-
         lines = cv2.HoughLines(edges, 1, np.pi / 180, 80)
         angle = 0
         if lines.all():
@@ -100,25 +136,41 @@ class crotal():
 
                 cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
             angle = theta*(180/mt.pi)
+        '''
 
 
+        _, contours, hier = cv2.findContours(img_umbralizada, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        result = cv2.cvtColor(src=img_umbralizada, code=cv2.COLOR_GRAY2RGB)
+        areas = [cv2.contourArea(c) for c in contours]
+        j = np.argmax(areas)  # indice del contorno con mayor area
+        cnt = contours[j]
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+
+        inccol=abs(box[1][0]-box[2][0])
+        incfil=abs(box[1][1]-box[2][1])
+
+        angle = -mt.atan2(incfil,inccol)*(180/mt.pi)
+        box = np.int0(box)
+        cv2.drawContours(result, [box], 0, (0, 0, 255), 2)
+        #plt.imshow(result),plt.title("caja BB"), plt.show()
 
 
 
 
         #Corregimos angulo
-        if angle >90:
-            angle=angle-90
+        if angle < -45:
+            angle=angle+90
 
         return angle
 
-    def recognition_text(self,img):
+    def detection_text(self,img):
 
         #TODO: Crear BB para el texto
         M = cv2.getRotationMatrix2D((self.img_umbralizada.shape[1] / 2, self.img_umbralizada.shape[0] / 2), self.angle,
                                     1)
         umbralizada_corregida = cv2.warpAffine(self.img_umbralizada, M, (self.img_umbralizada.shape[1], self.img_umbralizada.shape[0]))
-        plt.imshow(umbralizada_corregida,cmap="gray"),plt.title("umbralizado corregido"),plt.show()
+        #plt.imshow(umbralizada_corregida,cmap="gray"),plt.title("umbralizado corregido"),plt.show()
 
 
         _, contours, hier = cv2.findContours(umbralizada_corregida, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -127,14 +179,14 @@ class crotal():
         j = np.argmax(areas)  # indice del contorno con mayor area
         x, y, w, h = cv2.boundingRect(contours[j])
         cv2.rectangle(result, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        plt.imshow(result),plt.title("umbralizado corregido con BB"), plt.show()
+        #plt.imshow(result),plt.title("umbralizado corregido con BB"), plt.show()
 
-        image_to_recognise = umbralizada_corregida[int(y+h/2):int(y+h),x:int(x+w)]
+        image_to_recognise = umbralizada_corregida[int(y+h/2):int(y+h),x+10:int(x+w)-10]
         image_to_recognise = 255 * np.ones(image_to_recognise.shape, dtype="uint8") - image_to_recognise
         kernel = np.ones((3,3),dtype="uint8")
 
-        image_to_recognise = cv2.erode(image_to_recognise,kernel,iterations=3)
-        plt.imshow(image_to_recognise, cmap="gray"),plt.title("image2recognise erode"), plt.show()
+        image_to_recognise = cv2.dilate(image_to_recognise,kernel,iterations=0)
+        #plt.imshow(image_to_recognise, cmap="gray"),plt.title("image2recognise dilate"), plt.show()
 
 
         _, contours, hier = cv2.findContours(image_to_recognise, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -154,67 +206,78 @@ class crotal():
         for i in range(0, len(ROI)):
             cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
             cv2.rectangle(result, (ROI[i,0],ROI[i,1] ), (ROI[i,2], ROI[i,3]), (0, 255, 0), 2)
-        plt.imshow(result),plt.title("Cajas sin filtrar"), plt.show()
+        #plt.imshow(result),plt.title("Cajas sin filtrar"), plt.show()
 
 
 
 
         mifiltro = filtro(ROI)
         ROI = mifiltro.filtrar()
+        list_cajas = [caja(x=ROI[i,0],y=ROI[i,1],w=ROI[i,2]-ROI[i,0],h=ROI[i,3]-ROI[i,1]) for i in range(0,len(ROI))]
+        list_cajas = list(reversed(sorted(list_cajas, key=operator.attrgetter('area'))))
+        list_cajas=list_cajas[:4]
+
+
+
         result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
         for i in range(0, len(ROI)):
             cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
             cv2.rectangle(result, (ROI[i, 0], ROI[i, 1]), (ROI[i, 2], ROI[i, 3]), (0, 255, 0), 2)
-        plt.imshow(result), plt.title("Cajas filtradas"), plt.show()
+        #plt.imshow(result), plt.title("Cajas filtradas"), plt.show()
 
         areasROI = [(ROI[k, 0] - ROI[k, 2]) * (ROI[k, 1] - ROI[k, 3]) for k in range(0, len(ROI))]
         list_ordered = sorted(areasROI)
         list_ordered = list(reversed(list_ordered))
-        list_ordered=list_ordered[:5]
+        list_ordered = list_ordered[:4]
 
         result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
+
         for i in range(0, len(list_ordered)):
             index = areasROI.index(list_ordered[i])
-            box = ROI[index,:]
+            box = ROI[index, :]
+            cv2.rectangle(result, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
-            character = image_to_recognise[box[1]:box[3],box[0]:box[2]]
-            character = cv2.dilate(character,kernel,iterations=1)
-            text = Image.fromarray(character)
-            print(pytesseract.image_to_string(text))
-            character = cv2.resize(character,(28,28))
+       # plt.imshow(result), plt.title("Las cajas mas grandes"), plt.show()
 
-            batch_size = 128
-            xcharacter = np.reshape(character,(1,784))
-            xcharacter = xcharacter.astype('float32')
+        if list_cajas:
+            ymin,ymax = find_limits(list_cajas)
+        else:
+            ymin=0
+            ymax=1
 
-            predictions = self.loaded_model.predict([xcharacter], batch_size=batch_size)
-            print("El numero de la imagen es: ", np.argmax(predictions))
+        result = cv2.cvtColor(src=image_to_recognise, code=cv2.COLOR_GRAY2RGB)
+        text_image = result[ymin:ymax,:]
+        #plt.imshow(text_image), plt.title("ROI to tesseract"), plt.show()
 
-            plt.imshow(character,cmap="gray"), plt.title("character"), plt.show()
+        return text_image
 
-            cv2.drawContours(image=result, contours=contours, contourIdx=i, color=(255, 0, 0))
-            cv2.rectangle(result, (box[0], box[1]), (box [2], box[3]), (0, 255, 0), 2)
+    def tesseract(self,img,path):
+        path_out = "/home/f/PycharmProjects/AplicIndu/CrotalesTest/build"
+        filename, file_extension = os.path.splitext(path)
+        base = os.path.basename(path)
+        name = os.path.splitext(base)[0]
+        new_name = name+"_ROI"+file_extension
+        path = path_out+'/'+new_name
+        cv2.imwrite(path,img)
+        command = "tesseract "+path+" texto -l  eng -psm 7"
+        #print(command)
+        os.system(command)
 
+        #Eliminamos cualquier caracter no numerico
+        string = open('texto.txt').read()
+        new_str = re.sub("[^0-9]", "", string)
+        open('texto_modif.txt', 'w').write(new_str)
 
-            # TODO: reconecer el caracter y saber en que posicion esta
+        #abrimos el archivo modificado
+        file = open("texto_modif.txt", "r")
+        file = file.read()
+        number = re.findall(r"[-+]?\d*\.\d+|\d+", file)
+        if number:
+            number = int(number[0])
+        else:
+            number = 0
+        return number
 
-
-
-
-        plt.imshow(result), plt.title("Las 5 cajas mas grandes"), plt.show()
-
-        plt.imshow(result), plt.show()
-
-        text = Image.fromarray(image_to_recognise)
-        text = pytesseract.image_to_string(text)
-        print("text: ",text)
-
-
-
-
-
-        #TODO: Pasar tesseract
-        return "0288"
 
 
 
