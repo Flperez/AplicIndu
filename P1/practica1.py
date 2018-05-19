@@ -1,8 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from crotal import crotal
-import glob,os
 import csv
+import glob
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from P1.crotal import crotal
 
 path_to_directory = "CrotalesTest/TestSamples"
 

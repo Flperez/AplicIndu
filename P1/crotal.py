@@ -1,10 +1,13 @@
-import numpy as np
-import cv2
 import math as mt
-import matplotlib.pyplot as plt
-from filtro import filtro
 import operator
-import os,re
+import os
+import re
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+from P1.filtro import filtro
+
 
 class caja():
     def __init__(self,x,y,w,h):
