@@ -54,15 +54,19 @@ def load_reg(path):
 
 
 def load_data_and_label(path):
+
     data_and_labels_files=[]
     lst_images = natsorted(glob.glob(path+"/*.png"))
     for fname in lst_images:
         config = edict()
+        with tf.gfile.GFile(fname, 'rb') as fid:
+            encoded_jpg = fid.read()
+
         image = Image.open(fname)
         config.height = image.height
         config.width = image.width
         config.filename = fname.encode('utf-8')
-        config.encoded_image_data = bytes(os.path.getsize(fname))
+        config.encoded_image_data = encoded_jpg
         config.image_format = "png".encode('utf-8')
 
         reg_path = fname.split('.')[0]+".reg"
@@ -73,7 +77,7 @@ def load_data_and_label(path):
             config.xmaxs = [BB[0]+BB[2] for BB in BBs]
             config.ymaxs = [BB[1]+BB[3] for BB in BBs]
             config.classes_text = ["defecto".encode('utf-8') for BB in BBs]
-            config.classes = [0 for BB in BBs]
+            config.classes = [1 for BB in BBs]
         else:
             config.xmins = None
             config.ymins = None
