@@ -54,13 +54,11 @@ def writeLabel(path_out,lst_info,mode = None):
                 for idx in range(len(info.xmins)):
                     file.write("defecto 0.00 0 0 %d %d %d %d -1 -1 -1 -1 -1 -1 -1\n"
                            %(info.xmins[idx],info.ymins[idx],info.xmaxs[idx],info.ymaxs[idx]))
-            else:
-                file.write("nothing 0.00 0 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1\n")
 
-        with open(os.path.join(path_out,fimage), 'a') as file:
-            file.write("%s"%(info.fname)+".png\n")
-        with open(os.path.join(path_out, flabel), 'a') as file:
-            file.write("%s\n"%(path_label_txt))
+            with open(os.path.join(path_out,fimage), 'a') as file:
+                file.write("%s"%(info.fname)+".png\n")
+            with open(os.path.join(path_out, flabel), 'a') as file:
+                file.write("%s\n"%(path_label_txt))
 
 
 
