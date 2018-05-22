@@ -23,8 +23,8 @@ from main.config.create_config import load_dict
 
 #global variables can be set by optional arguments
 #TODO: Makes proper variables in train() instead of global arguments.
-img_file = "img_train.txt"
-gt_file = "gt_train.txt"
+img_names_training  = "img_train.txt"
+gt_file_training = "gt_train.txt"
 log_dir_name = './log'
 init_file = "imagenet.h5"
 EPOCHS = 100
@@ -64,23 +64,29 @@ def train():
 
 
     #open files with images and ground truths files with full path names
-    with open(img_file) as imgs:
-        img_names = imgs.read().splitlines()
+    with open(img_file_training) as imgs:
+        img_names_training = imgs.read().splitlines()
     imgs.close()
-    with open(gt_file) as gts:
-        gt_names = gts.read().splitlines()
+    with open(gt_file_training) as gts:
+        gt_names_training = gts.read().splitlines()
     gts.close()
 
+    with open(img_file_validation) as imgs:
+        img_names_validation = imgs.read().splitlines()
+    imgs.close()
+    with open(gt_file_validation) as gts:
+        gt_names_validation = gts.read().splitlines()
+    gts.close()
 
     #create config object
     cfg = load_dict(CONFIG)
 
 
     #add stuff for documentation to config
-    cfg.img_file = img_file
-    cfg.gt_file = gt_file
-    cfg.images = img_names
-    cfg.gts = gt_names
+    cfg.img_file = img_file_training
+    cfg.gt_file = gt_file_training
+    cfg.images = img_names_training
+    cfg.gts = gt_names_training
     cfg.init_file = init_file
     cfg.EPOCHS = EPOCHS
     cfg.OPTIMIZER = OPTIMIZER
@@ -108,7 +114,9 @@ def train():
     cfg.BATCH_SIZE = cfg.BATCH_SIZE * GPUS
 
     #compute number of batches per epoch
-    nbatches_train, mod = divmod(len(img_names), cfg.BATCH_SIZE)
+    nbatches_train, mod = divmod(len(img_names_training), cfg.BATCH_SIZE)
+    nbatches_val, mod = divmod(len(img_names_validation), cfg.BATCH_SIZE)
+
 
     if STEPS is not None:
         nbatches_train = STEPS
@@ -116,10 +124,10 @@ def train():
     cfg.STEPS = nbatches_train
 
     #print some run info
-    print("Number of images: {}".format(len(img_names)))
-    print("Number of epochs: {}".format(EPOCHS))
-    print("Number of batches: {}".format(nbatches_train))
-    print("Batch size: {}".format(cfg.BATCH_SIZE))
+    print("Number of images training: {}".format(len(img_names_training)))
+    print("Number of epochs training: {}".format(EPOCHS))
+    print("Number of batches of training: {}".format(nbatches_train))
+    print("Batch size training: {}".format(cfg.BATCH_SIZE))
 
     #tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -213,7 +221,8 @@ def train():
         """
 
     #create train generator
-    train_generator = generator_from_data_path(img_names, gt_names, config=cfg)
+    train_generator = generator_from_data_path(img_names_training, gt_names_training, config=cfg)
+    validation_generator = generator_from_data_path(img_names_validation,gt_names_validation,config=config)
 
     #make model parallel if specified
     if GPUS > 1:
@@ -236,8 +245,14 @@ def train():
 
 
         #actually do the training
-        parallel_model.fit_generator(train_generator, epochs=EPOCHS,
-                                        steps_per_epoch=nbatches_train, callbacks=cb)
+        if gt_file_validation:
+            parallel_model.fit_generator(train_generator, epochs=EPOCHS,
+                                        steps_per_epoch=nbatches_train, callbacks=cb,
+                                        validation_data=validation_generator,validation_steps=nbatches_val)
+        else:
+            parallel_model.fit_generator(train_generator, epochs=EPOCHS,
+                                         steps_per_epoch=nbatches_train, callbacks=cb)
+
 
 
     else:
@@ -272,11 +287,13 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, help="number of epochs. DEFAULT: 100")
     parser.add_argument("--optimizer",  help="Which optimizer to use. DEFAULT: SGD with Momentum and lr decay OPTIONS: SGD, ADAM")
     parser.add_argument("--logdir", help="dir with checkpoints and loggings. DEFAULT: ./log")
-    parser.add_argument("--img", help="file of full path names for the training images. DEFAULT: img_train.txt")
-    parser.add_argument("--gt", help="file of full path names for the corresponding training gts. DEFAULT: gt_train.txt")
+    parser.add_argument("--img_training", help="file of full path names for the training images. DEFAULT: img_train.txt")
+    parser.add_argument("--gt_training", help="file of full path names for the corresponding training gts. DEFAULT: gt_train.txt")
+    parser.add_argument("--img_validation", help="file of full path names for the validation images. DEFAULT: img_train.txt")
+    parser.add_argument("--gt_validation", help="file of full path names for the corresponding validation gts. DEFAULT: gt_train.txt")
     parser.add_argument("--gpu",  help="which gpu to use. DEFAULT: 0")
     parser.add_argument("--gpus", type=int,  help="number of GPUS to use when using multi gpu support. Overwrites gpu flag. DEFAULT: 1")
-    parser.add_argument("--init",  help="keras checkpoint to start training from. If argument is none, training starts from the beginnin. DEFAULT: init_weights.h5")
+    parser.add_argument("--init",  help="keras checkpoint to start training from. If argument is none, training starts from the beginning. DEFAULT: init_weights.h5")
     parser.add_argument("--resume", type=bool, help="Resumes training and does not delete old dirs. DEFAULT: False")
     parser.add_argument("--reducelr", type=bool, help="Add ReduceLrOnPlateu callback to training. DEFAULT: True")
     parser.add_argument("--verbose", type=bool,  help="Prints additional information. DEFAULT: False")
@@ -286,10 +303,14 @@ if __name__ == "__main__":
 
 
     #set global variables
-    if args.img is not None:
-        img_file = args.img
-    if args.gt is not None:
-        gt_file = args.gt
+    if args.img_training  is not None:
+        img_file_training = args.img_training
+    if args.gt_training  is not None:
+        gt_file_training  = args.gt_training
+    if args.img_validation is not None:
+        img_file_validation = args.img_validation
+    if args.gt_validation is not None:
+        gt_file_validation = args.gt_validation
     if args.logdir is not None:
         log_dir_name = args.logdir
     if args.gpu is not None:
