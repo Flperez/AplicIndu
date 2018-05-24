@@ -52,7 +52,7 @@ def writeLabel(path_out,lst_info,mode = None):
         print("Creating")
     for info in lst_info:
         path_label_txt = os.path.join(path_label,info.fname.split('/')[-1]+".txt")
-        sys.stdout.write("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r"))
+        sys.stdout.write("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r")
         sys.stdout.flush()
         with open(path_label_txt,'w') as file:
             if info.xmins:
