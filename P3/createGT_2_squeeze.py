@@ -1,4 +1,4 @@
-import argparse,glob,os
+import argparse,glob,os,sys
 import cv2
 from easydict import EasyDict as edict
 from natsort import natsorted
@@ -13,6 +13,7 @@ def load_reg(path):
 
 def createlstinfo(path_in):
     lst_images = natsorted(glob.glob(path_in+"/*.png"))
+    print("Number of images",len(lst_images))
     lst_info = []
 
     for fname in lst_images:
@@ -46,9 +47,13 @@ def writeLabel(path_out,lst_info,mode = None):
         flabel = "flabel.txt"
 
     if not os.path.exists(path_label):
+        print("The path: ",path_label," don't exist")
         os.makedirs(path_label)
+        print("Creating")
     for info in lst_info:
         path_label_txt = os.path.join(path_label,info.fname.split('/')[-1]+".txt")
+        sys.stdout.write("Image: ",info.fname,": ",str(len(info.xmins)," labels\r"))
+        sys.stdout.flush()
         with open(path_label_txt,'w') as file:
             if info.xmins:
                 for idx in range(len(info.xmins)):
