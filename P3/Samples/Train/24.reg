@@ -1,0 +1,7 @@
+%YAML:1.0
+---
+rectangles: !!opencv-matrix
+   rows: 4
+   cols: 2
+   dt: i
+   data: [ 174, 307, 338, 137, 66, 81, 63, 107 ]

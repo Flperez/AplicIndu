@@ -1,0 +1,7 @@
+%YAML:1.0
+---
+rectangles: !!opencv-matrix
+   rows: 4
+   cols: 2
+   dt: i
+   data: [ 229, 100, 199, 34, 134, 54, 36, 162 ]
