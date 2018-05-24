@@ -52,18 +52,19 @@ def writeLabel(path_out,lst_info,mode = None):
         print("Creating")
     for info in lst_info:
         path_label_txt = os.path.join(path_label,info.fname.split('/')[-1]+".txt")
-        sys.stdout.write("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r")
-        sys.stdout.flush()
-        with open(path_label_txt,'w') as file:
-            if info.xmins:
-                for idx in range(len(info.xmins)):
-                    file.write("defecto 0.00 0 0 %d %d %d %d -1 -1 -1 -1 -1 -1 -1\n"
-                           %(info.xmins[idx],info.ymins[idx],info.xmaxs[idx],info.ymaxs[idx]))
+        if info.xmins:
+            sys.stdout.write("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r")
+            sys.stdout.flush()
+            with open(path_label_txt,'w') as file:
 
-            with open(os.path.join(path_out,fimage), 'a') as file:
-                file.write("%s"%(info.fname)+".png\n")
-            with open(os.path.join(path_out, flabel), 'a') as file:
-                file.write("%s\n"%(path_label_txt))
+                    for idx in range(len(info.xmins)):
+                        file.write("defecto 0.00 0 0 %d %d %d %d -1 -1 -1 -1 -1 -1 -1\n"
+                               %(info.xmins[idx],info.ymins[idx],info.xmaxs[idx],info.ymaxs[idx]))
+
+                with open(os.path.join(path_out,fimage), 'a') as file:
+                    file.write("%s"%(info.fname)+".png\n")
+                with open(os.path.join(path_out, flabel), 'a') as file:
+                    file.write("%s\n"%(path_label_txt))
 
 
 
