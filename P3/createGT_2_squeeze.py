@@ -53,8 +53,7 @@ def writeLabel(path_out,lst_info,mode = None):
     for info in lst_info:
         path_label_txt = os.path.join(path_label,info.fname.split('/')[-1]+".txt")
         if info.xmins:
-            sys.stdout.write("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r")
-            sys.stdout.flush()
+            print("Image: "+info.fname+": "+str(len(info.xmins))+" labels\r")
             with open(path_label_txt,'w') as file:
                 for idx in range(len(info.xmins)):
                     file.write("defecto 0.00 0 0 %d %d %d %d -1 -1 -1 -1 -1 -1 -1\n"\
