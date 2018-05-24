@@ -65,6 +65,9 @@ def writeLabel(path_out,lst_info,mode = None):
             with open(os.path.join(path_out, flabel), 'a') as file:
                 file.write("%s\n"%(path_label_txt))
 
+    print("Creating ",os.path.join(path_out,fimage))
+    print("Creating ",os.path.join(path_out,flabel))
+
 
 
 
