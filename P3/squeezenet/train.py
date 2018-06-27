@@ -154,10 +154,9 @@ def train():
 
 
         # create sgd with momentum and gradient clipping
-        opt = optimizers.SGD(lr=cfg.LEARNING_RATE * GPUS, decay=0, momentum=cfg.MOMENTUM,
-                             nesterov=False, clipnorm=cfg.MAX_GRAD_NORM)
+        opt = optimizers.SGD(lr=0.0001, momentum=0.9)
 
-        cfg.LR = cfg.LEARNING_RATE  * GPUS
+        cfg.LR = 0.0001  * GPUS
 
 
         print("Learning rate: {}".format(cfg.LEARNING_RATE * GPUS))
