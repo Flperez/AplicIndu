@@ -38,12 +38,12 @@ def squeezeDet_config(name):
     cfg.N_CHANNELS            = 3
 
     #batch sizes
-    cfg.BATCH_SIZE            = 2
-    cfg.VISUALIZATION_BATCH_SIZE = 16
+    cfg.BATCH_SIZE            = 1
+    cfg.VISUALIZATION_BATCH_SIZE = 1
 
     #SGD + Momentum parameters
     cfg.WEIGHT_DECAY          = 0.001
-    cfg.LEARNING_RATE         = 0.001
+    cfg.LEARNING_RATE         = 0.01
     cfg.MAX_GRAD_NORM         = 1.0
     cfg.MOMENTUM              = 0.9
 
