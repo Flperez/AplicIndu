@@ -105,7 +105,7 @@ def read_image_and_gt(img_files, gt_files, config):
 
 
         #open img
-        img = cv2.imread(img_name).astype(np.float32, copy=False)
+        img = cv2.imread(img_name).astype(np.float16, copy=False)
 
 
         # scale image
