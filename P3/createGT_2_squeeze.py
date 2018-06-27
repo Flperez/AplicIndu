@@ -39,6 +39,8 @@ def createlstinfo(path_in):
 def writeLabel(path_out,lst_info):
 
     path_label = os.path.join(path_out, "labels")
+    if not os.path.exists(path_label):
+        os.mkdir(path_label)
     fimage = "fimages.txt"
     flabel = "flabel.txt"
 
