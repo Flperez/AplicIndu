@@ -276,8 +276,6 @@ if __name__ == "__main__":
     parser.add_argument("--logdir", help="dir with checkpoints and loggings. DEFAULT: ./log")
     parser.add_argument("--img_training", help="file of full path names for the training images. DEFAULT: img_train.txt")
     parser.add_argument("--gt_training", help="file of full path names for the corresponding training gts. DEFAULT: gt_train.txt")
-    parser.add_argument("--img_validation", help="file of full path names for the validation images. DEFAULT: img_train.txt")
-    parser.add_argument("--gt_validation", help="file of full path names for the corresponding validation gts. DEFAULT: gt_train.txt")
     parser.add_argument("--gpu",  help="which gpu to use. DEFAULT: 0")
     parser.add_argument("--gpus", type=int,  help="number of GPUS to use when using multi gpu support. Overwrites gpu flag. DEFAULT: 1")
     parser.add_argument("--init",  help="keras checkpoint to start training from. If argument is none, training starts from the beginning. DEFAULT: init_weights.h5")
