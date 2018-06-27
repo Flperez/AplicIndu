@@ -38,7 +38,7 @@ def squeezeDet_config(name):
     cfg.N_CHANNELS            = 3
 
     #batch sizes
-    cfg.BATCH_SIZE            = 1
+    cfg.BATCH_SIZE            = 2
     cfg.VISUALIZATION_BATCH_SIZE = 16
 
     #SGD + Momentum parameters
