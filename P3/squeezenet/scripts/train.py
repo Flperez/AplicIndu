@@ -71,12 +71,6 @@ def train():
         gt_names_training = gts.read().splitlines()
     gts.close()
 
-    with open(img_file_validation) as imgs:
-        img_names_validation = imgs.read().splitlines()
-    imgs.close()
-    with open(gt_file_validation) as gts:
-        gt_names_validation = gts.read().splitlines()
-    gts.close()
 
     #create config object
     cfg = load_dict(CONFIG)
@@ -115,7 +109,6 @@ def train():
 
     #compute number of batches per epoch
     nbatches_train, mod = divmod(len(img_names_training), cfg.BATCH_SIZE)
-    nbatches_val, mod = divmod(len(img_names_validation), cfg.BATCH_SIZE)
 
 
     if STEPS is not None:
@@ -222,7 +215,6 @@ def train():
 
     #create train generator
     train_generator = generator_from_data_path(img_names_training, gt_names_training, config=cfg)
-    validation_generator = generator_from_data_path(img_names_validation,gt_names_validation,config=config)
 
     #make model parallel if specified
     if GPUS > 1:
@@ -245,12 +237,7 @@ def train():
 
 
         #actually do the training
-        if gt_file_validation:
-            parallel_model.fit_generator(train_generator, epochs=EPOCHS,
-                                        steps_per_epoch=nbatches_train, callbacks=cb,
-                                        validation_data=validation_generator,validation_steps=nbatches_val)
-        else:
-            parallel_model.fit_generator(train_generator, epochs=EPOCHS,
+        parallel_model.fit_generator(train_generator, epochs=EPOCHS,
                                          steps_per_epoch=nbatches_train, callbacks=cb)
 
 
