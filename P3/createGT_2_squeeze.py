@@ -36,15 +36,11 @@ def createlstinfo(path_in):
         lst_info.append(config)
     return lst_info
 
-def writeLabel(path_out,lst_info,mode = None):
-    if mode:
-        path_label = os.path.join(path_out,mode, "labels")
-        fimage = "fimages_"+mode+".txt"
-        flabel = "flabel_"+mode+".txt"
-    else:
-        path_label = os.path.join(path_out,"labels")
-        fimage = "fimages.txt"
-        flabel = "flabel.txt"
+def writeLabel(path_out,lst_info):
+
+    path_label = os.path.join(path_out, "labels")
+    fimage = "fimages.txt"
+    flabel = "flabel.txt"
 
     if not os.path.exists(path_label):
         print("The path: ",path_label," don't exist")
@@ -77,22 +73,8 @@ if __name__=="__main__":
                     help="a las carpetas con las imagenes png y .reg")
     ap.add_argument("--path_out", required=True,
                     help="path a la carpeta donde se crearan las labels y los archivos txts con las rutas")
-    ap.add_argument("--split_data",required=False,type=float,default=0.0,
-                    help="Splitting (%) path_in files amount")
-    ap.add_argument("--random",action="store_true",
-                    help="If type it, list of files would be randomized")
     FLAGS = ap.parse_args()
 
     lst_info = createlstinfo(FLAGS.path_in)
-    if FLAGS.random:
-        shuffle(lst_info)
+    writeLabel(FLAGS.path_out, lst_info)
 
-    if FLAGS.split_data>0:
-        idx = int(FLAGS.split_data*len(lst_info))
-        lst1 = lst_info[idx:]
-        lst2 = lst_info[:idx]
-        writeLabel(FLAGS.path_out, lst1,"training")
-        writeLabel(FLAGS.path_out, lst2,"validation")
-
-    else:
-        writeLabel(FLAGS.path_out,lst_info)
