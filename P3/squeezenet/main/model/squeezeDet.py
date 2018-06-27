@@ -83,6 +83,7 @@ class SqueezeDet():
 
         #compute the number of output nodes from number of anchors, classes, confidence score and bounding box corners
         num_output = self.config.ANCHOR_PER_GRID * (self.config.CLASSES + 1 + 4)
+        print(num_output)
 
         preds = Conv2D(
             name='conv12', filters=num_output, kernel_size=(3, 3), strides=(1, 1), activation=None, padding="SAME",
