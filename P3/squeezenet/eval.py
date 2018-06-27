@@ -39,7 +39,7 @@ STARTWITH = None
 CONFIG = "squeeze.config"
 TESTING = False
 
-
+ckpt="none"
 
 def eval():
     """
@@ -289,157 +289,6 @@ def eval():
     f.write(header)
 
     #listening for new checkpoints
-    while 1:
-
-        current_model = None
-
-        #go through checkpoint dir
-        for ckpt in sorted(os.listdir(checkpoint_dir)):
-
-            if STARTWITH is not None:
-                if ckpt < STARTWITH:
-                    evaluated_models.add(ckpt)
-
-
-
-            #if model hasn't been evaluated
-            if ckpt not in evaluated_models:
-
-                #string for csv
-                line = ""
-
-                #add epoch to csv
-                line += str(len(evaluated_models)+1) +";"
-
-                print("Evaluating model {}".format(ckpt))
-
-                #load this ckpt
-                current_model= ckpt
-                try:
-                    squeeze.model.load_weights(checkpoint_dir + "/"+ ckpt)
-
-                #sometimes model loading files, because the file is still locked, so wait a little bit
-                except OSError as e:
-                    print(e)
-                    time.sleep(10)
-                    squeeze.model.load_weights(checkpoint_dir + "/" + ckpt)
-
-                # create 2 validation generators, one for metrics and one for object detection evaluation
-                # we have to reset them each time to have the same data, otherwise we'd have to use batch size one.
-                val_generator_1 = generator_from_data_path(img_names, gt_names, config=cfg)
-                val_generator_2 = generator_from_data_path(img_names, gt_names, config=cfg)
-                # create a generator for the visualization of bounding boxes
-                vis_generator = visualization_generator_from_data_path(img_names, gt_names, config=cfg)
-
-                print("  Evaluate losses...")
-                #compute losses of whole val set
-                losses = model.evaluate_generator(val_generator_1, steps=nbatches_valid, max_queue_size=10,
-                                                         use_multiprocessing=False)
-
-
-                #manually add losses to tensorboard
-                sess.run(loss_assign_ops , {loss_placeholder: losses[0],
-                                            loss_without_regularization_placeholder: losses[4],
-                                            conf_loss_placeholder: losses[3],
-                                            class_loss_placeholder: losses[2],
-                                            bbox_loss_placeholder: losses[1]})
-
-                #print losses
-                print("  Losses:")
-                print("  Loss with regularization: {}   val loss:{} \n     bbox_loss:{} \n     class_loss:{} \n     conf_loss:{}".
-                      format(losses[0], losses[4], losses[1], losses[2], losses[3]) )
-
-                line += "{};{};{};{};{};".format(losses[0] , losses[4], losses[1], losses[2], losses[3])
-
-                #save model with smallest loss
-                if losses[4] < best_val_loss:
-                    best_val_loss = losses[4]
-                    best_val_loss_ckpt = current_model
-
-
-
-                #compute precision recall and mean average precision
-                precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_valid, config=cfg)
-
-                #create feed dict for visualization
-                prmap_feed_dict = {}
-                for i, name in enumerate(cfg.CLASS_NAMES):
-
-                    prmap_feed_dict[precision_placeholders[i]] = precision[i]
-                    prmap_feed_dict[recall_placeholders[i]] = recall[i]
-                    prmap_feed_dict[AP_placeholders[i]] = AP[i,1]
-                    prmap_feed_dict[f1_placeholders[i]] = f1[i]
-
-                    line += "{};{};{};{}".format( precision[i], recall[i],AP[i,1],f1[i])
-
-
-
-
-                prmap_feed_dict[mAP_placeholder] = np.mean(AP[:,1], axis=0)
-
-                #save model with biggest mean average precision
-                if np.mean(AP[:,1], axis=0) > best_mAP:
-                    best_mAP = np.mean(AP[:,1], axis=0)
-                    best_mAP_ckpt = current_model
-
-
-                #run loss assign ops for tensorboard
-                sess.run(prmap_assign_ops, prmap_feed_dict)
-
-                #create visualization
-                imgs = visualize( model=model, generator=vis_generator, config=cfg)
-
-                ##update op for images
-                sess.run(update_images, {update_placeholder:imgs})
-
-                #write everything to tensorboard
-                writer.add_summary(merged.eval(session=sess), len(evaluated_models))
-
-                writer.flush()
-
-                f.write(line + "\n")
-
-                f.flush()
-
-                #mark as evaluated
-                evaluated_models.add(ckpt)
-
-                #reset timeout
-                time_out_counter = 0
-
-            #if all ckpts have been evaluated on val set end
-            if len(evaluated_models) == EPOCHS:
-                break
-
-
-        #if all ckpts have been evaluated on val set end
-        if len(evaluated_models) == EPOCHS:
-            print("Evaluated all checkpoints")
-            break
-
-        #no new model found
-        if current_model is None:
-
-            #when timeout has been reached, abort
-            if time_out_counter == TIMEOUT:
-                print("timeout")
-                break
-
-            print("Waiting for new checkpoint....")
-            time.sleep(60)
-            time_out_counter += 1
-
-    f.close()
-
-
-    #evaluate best ckpts on test set
-
-    #list of ckpts for test set evaluation
-    ckpts = [best_val_loss_ckpt, best_mAP_ckpt]
-
-    print("Lowest loss: {} at checkpoint {}".format(best_val_loss, best_val_loss_ckpt))
-    print("Highest mAP: {} at checkpoint {}".format(best_mAP, best_mAP_ckpt))
-
 
     #evaluate on test set
     if TESTING:
@@ -600,65 +449,64 @@ def eval():
         i=1
 
         #go through given checkpoints
-        for ckpt in ckpts:
 
 
-            print("Evaluating model {} on test data".format(ckpt) )
+        print("Evaluating model {} on test data".format(ckpt) )
 
 
-            #load this ckpt
-            current_model = ckpt
-            squeeze.model.load_weights(checkpoint_dir + "/"+ ckpt)
+        #load this ckpt
+        current_model = ckpt
+        squeeze.model.load_weights(checkpoint_dir + "/"+ ckpt)
 
-            # create 2 validation generators, one for metrics and one for object detection evaluation
-            # we have to reset them each time to have the same data
-            val_generator_1 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
-            val_generator_2 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
-            # create a generator for the visualization of bounding boxes
+        # create 2 validation generators, one for metrics and one for object detection evaluation
+        # we have to reset them each time to have the same data
+        val_generator_1 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
+        val_generator_2 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
+        # create a generator for the visualization of bounding boxes
 
-            print("  Evaluate losses...")
-            #compute losses of whole val set
-            losses = model.evaluate_generator(val_generator_1, steps=nbatches_test, max_queue_size=10,
-                                                     use_multiprocessing=False)
-
-
-            #manually add losses to tensorboard
-            sess.run(loss_assign_ops , {loss_placeholder: losses[0],
-                                        loss_without_regularization_placeholder: losses[4],
-                                        conf_loss_placeholder: losses[3],
-                                        class_loss_placeholder: losses[2],
-                                        bbox_loss_placeholder: losses[1]})
-
-            print("  Losses:")
-            print("  Loss with regularization: {}   val loss:{} \n     bbox_loss:{} \n     class_loss:{} \n     conf_loss:{}".
-                  format(losses[0], losses[4], losses[1], losses[2], losses[3]) )
+        print("  Evaluate losses...")
+        #compute losses of whole val set
+        losses = model.evaluate_generator(val_generator_1, steps=nbatches_test, max_queue_size=10,
+                                                 use_multiprocessing=False)
 
 
+        #manually add losses to tensorboard
+        sess.run(loss_assign_ops , {loss_placeholder: losses[0],
+                                    loss_without_regularization_placeholder: losses[4],
+                                    conf_loss_placeholder: losses[3],
+                                    class_loss_placeholder: losses[2],
+                                    bbox_loss_placeholder: losses[1]})
 
-            #compute precision recall and mean average precision
-            precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_test, config=cfg)
-
-            #create feed dict for visualization
-            prmap_feed_dict = {}
-            for i, name in enumerate(cfg.CLASS_NAMES):
-                prmap_feed_dict[precision_placeholders[i]] = precision[i]
-                prmap_feed_dict[recall_placeholders[i]] = recall[i]
-                prmap_feed_dict[AP_placeholders[i]] = AP[i,1]
-                prmap_feed_dict[f1_placeholders[i]] = f1[i]
-
-
-            prmap_feed_dict[mAP_placeholder] = np.mean(AP[:,1], axis=0)
+        print("  Losses:")
+        print("  Loss with regularization: {}   val loss:{} \n     bbox_loss:{} \n     class_loss:{} \n     conf_loss:{}".
+              format(losses[0], losses[4], losses[1], losses[2], losses[3]) )
 
 
-            sess.run(prmap_assign_ops, prmap_feed_dict)
+
+        #compute precision recall and mean average precision
+        precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_test, config=cfg)
+
+        #create feed dict for visualization
+        prmap_feed_dict = {}
+        for i, name in enumerate(cfg.CLASS_NAMES):
+            prmap_feed_dict[precision_placeholders[i]] = precision[i]
+            prmap_feed_dict[recall_placeholders[i]] = recall[i]
+            prmap_feed_dict[AP_placeholders[i]] = AP[i,1]
+            prmap_feed_dict[f1_placeholders[i]] = f1[i]
 
 
-            #write everything to tensorboard
-            writer.add_summary(merged.eval(session=sess), i)
+        prmap_feed_dict[mAP_placeholder] = np.mean(AP[:,1], axis=0)
 
-            writer.flush()
 
-            i+=1
+        sess.run(prmap_assign_ops, prmap_feed_dict)
+
+
+        #write everything to tensorboard
+        writer.add_summary(merged.eval(session=sess), i)
+
+        writer.flush()
+
+        i+=1
 
 
 
@@ -680,6 +528,7 @@ if __name__ == "__main__":
     parser.add_argument("--init" , help="start evaluating at a later checkpoint")
     parser.add_argument("--config",   help="Dictionary of all the hyperparameters. DEFAULT: squeeze.config")
     parser.add_argument("--testing",   help="Run eval on test set. DEFAULT: False")
+    parser.add_argument("--ckpt",   help="name of checkpoint")
 
     args = parser.parse_args()
 
@@ -688,6 +537,8 @@ if __name__ == "__main__":
         log_dir_name = args.logdir
         checkpoint_dir = log_dir_name + '/checkpoints'
         tensorboard_dir = log_dir_name + '/tensorboard_val'
+    if args.ckpt is not None:
+        ckpt = args.ckpt
 
     if args.val_img is not None:
         img_file = args.val_img
