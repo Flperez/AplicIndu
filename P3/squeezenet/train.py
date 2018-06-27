@@ -154,7 +154,7 @@ def train():
 
 
         # create sgd with momentum and gradient clipping
-        opt = optimizers.SGD(lr=cfg.LR, momentum=0.9)
+        opt = optimizers.SGD(lr=cfg.LEARNING_RATE, momentum=0.9)
 
         cfg.LR = 0.0001  * GPUS
 
