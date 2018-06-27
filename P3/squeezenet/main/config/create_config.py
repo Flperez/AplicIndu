@@ -43,7 +43,7 @@ def squeezeDet_config(name):
 
     #SGD + Momentum parameters
     cfg.WEIGHT_DECAY          = 0.001
-    cfg.LEARNING_RATE         = 0.00001
+    cfg.LEARNING_RATE         = 0.0001
     cfg.MAX_GRAD_NORM         = 1.0
     cfg.MOMENTUM              = 0.9
 
