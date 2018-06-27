@@ -33,8 +33,8 @@ def squeezeDet_config(name):
 
 
     #image properties
-    cfg.IMAGE_WIDTH           = 488
-    cfg.IMAGE_HEIGHT          = 442
+    cfg.IMAGE_WIDTH           = 1248
+    cfg.IMAGE_HEIGHT          = 384
     cfg.N_CHANNELS            = 3
 
     #batch sizes

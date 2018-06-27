@@ -94,8 +94,7 @@ class SqueezeDet():
 
         
         #reshape
-        print(self.config.ANCHORS)
-        pred_reshaped = Reshape((28*31*54, -1))(preds)
+        pred_reshaped = Reshape((self.config.ANCHORS, -1))(preds)
 
         #pad for loss function so y_pred and y_true have the same dimensions, wrap in lambda layer
         pred_padded = Lambda(self._pad)( pred_reshaped)
