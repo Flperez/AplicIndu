@@ -5,8 +5,9 @@
 # Organisation: searchInk
 # Email: christopher@searchink.com
 
-import sys
+import sys,os
 sys.path.append("..")
+print(os.getcwd())
 from main.model.squeezeDet import  SqueezeDet
 from main.model.dataGenerator import generator_from_data_path
 import keras.backend as K
