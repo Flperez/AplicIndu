@@ -5,8 +5,7 @@
 # Organisation: searchInk
 # Email: christopher@searchink.com
 
-import sys,os
-os.chdir("..")
+
 from main.model.squeezeDet import  SqueezeDet
 from main.model.dataGenerator import generator_from_data_path
 import keras.backend as K
@@ -293,10 +292,6 @@ if __name__ == "__main__":
         img_file_training = args.img_training
     if args.gt_training  is not None:
         gt_file_training  = args.gt_training
-    if args.img_validation is not None:
-        img_file_validation = args.img_validation
-    if args.gt_validation is not None:
-        gt_file_validation = args.gt_validation
     if args.logdir is not None:
         log_dir_name = args.logdir
     if args.gpu is not None:
