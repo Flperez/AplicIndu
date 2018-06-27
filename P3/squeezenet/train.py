@@ -26,7 +26,7 @@ from main.config.create_config import load_dict
 img_names_training  = "img_train.txt"
 gt_file_training = "gt_train.txt"
 log_dir_name = './log'
-# init_file = "imagenet.h5"
+init_file = "imagenet.h5"
 EPOCHS = 100
 STEPS = None
 OPTIMIZER = "default"
