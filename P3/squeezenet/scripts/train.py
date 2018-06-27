@@ -6,8 +6,7 @@
 # Email: christopher@searchink.com
 
 import sys,os
-sys.path.append("..")
-print(os.getcwd())
+os.chdir("..")
 from main.model.squeezeDet import  SqueezeDet
 from main.model.dataGenerator import generator_from_data_path
 import keras.backend as K
