@@ -1,6 +1,3 @@
-import numpy as np
-import cv2
-import matplotlib.pyplot as plt
 import argparse
 import glob
 from natsort import natsorted
@@ -72,10 +69,12 @@ if __name__ == '__main__':
 
     print("\n\n-----------------TOTAL--------------------")
     print("Total of BB GT: ",TotalBBGT)
-    print("Accuracy: ",TotalTruePositive/TotalBBGT)
     print("Falses positives: ",TotalFalsePositive)
     print("Trues positives: ",TotalTruePositive)
     print("False negative: ", TotalFalseNegative)
+    print("Recall:",TotalTruePositive/(TotalTruePositive+TotalFalseNegative))
+    print("Accuracy: ",TotalTruePositive/TotalBBGT)
+
 
 
 

@@ -1,8 +1,11 @@
 import numpy as np
 import cv2
 
-
+############# GABOR FILTER FUNCTIONS #############
 def GaborFilter(ksize=51,sigma=4.0,lambd=10.0,gamma=1,psi=0):
+    '''
+     https://gist.github.com/odebeir/5237529
+    '''
     filters = []
     ksize = ksize
     for theta in np.arange(0, np.pi, np.pi / 16):
@@ -19,6 +22,8 @@ def process(image, filters):
         np.maximum(accum, fimg, accum)
     return accum
 
+############# LOAD DATA FUNCTIONS #############
+
 def load_reg(path):
     fs = cv2.FileStorage(path,cv2.FILE_STORAGE_READ)
     rect = fs.getNode("rectangles")
@@ -28,19 +33,21 @@ def load_reg(path):
 
     return rect
 
-
+############# GET BOUNDING BOX FUNCTION #############
 
 def getBoxes(mask):
     _, contours, _= cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
+        #Limiting size of bounding box
         if (12 < w < 100 and 12 < h < 80) or (20 < w < 400 and 4 < h < 50):
             box = np.array([x,y,x+w,y+h])
             boxes.append(box)
     boxes = np.asarray(boxes,dtype=int)
     return boxes
 
+############# DRAWING FUNCTION #############
 def drawBoundingBoxes(image,boxes,color=(255,0,0),thickness=2):
     if len(image.shape)==2:
         out = cv2.cvtColor(image,cv2.cvtColor(cv2.COLOR_GRAY2BGR))
@@ -52,7 +59,7 @@ def drawBoundingBoxes(image,boxes,color=(255,0,0),thickness=2):
     return out
 
 
-
+############# CALCULATE METRICS FUNCTIONS #############
 def contained(A, B):
     corners = [[A[0],A[1]],[A[0],A[3]],[A[1],A[3]],[A[2],A[1]]]
     for corner in corners:
@@ -118,7 +125,4 @@ def verifDetection(GT_BBs,DT_BBs,threshold=0.6):
                 FalseNegative+=1
         if GT_BBs.shape[0]<DT_BBs.shape[0]:
             FalsePositive+=(DT_BBs.shape[0]-TruePositivep)
-
-
-
     return TruePositive, FalsePositive,FalseNegative
