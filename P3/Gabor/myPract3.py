@@ -17,7 +17,8 @@ if __name__ == '__main__':
 
     lst_images = natsorted(glob.glob(args.input+"/*.png"))
     MyfilteGabor = GaborFilter()
-    TotalFalsePositive,TotalTruePositive = 0,0
+    TotalFalsePositive,TotalTruePositive,TotalBBGT = 0,0,0
+
     for path_image in lst_images:
 
         # Load image and convert to gray
@@ -44,6 +45,7 @@ if __name__ == '__main__':
         reg_path = path_image.split('.')[0] + ".reg"
         if os.path.isfile(reg_path):
             GroundTruth_BB = load_reg(reg_path)
+            TotalBBGT+=GroundTruth_BB.shape[0]
         else:
             GroundTruth_BB = np.array([])
 
@@ -63,6 +65,8 @@ if __name__ == '__main__':
             cv2.waitKey()
 
     print("\n\n-----------------TOTAL--------------------")
+    print("Total of BB GT: ",TotalBBGT)
+    print("Accuracy: ",TotalTruePositive/TotalBBGT)
     print("Falses positives: ",TotalFalsePositive)
     print("Trues positives: ",TotalTruePositive)
 
