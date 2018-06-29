@@ -15,9 +15,14 @@ if __name__ == '__main__':
     ap.add_argument("--vis", action="store_true", help="Visualize results")
     args = ap.parse_args()
 
-    lst_images = natsorted(glob.glob(args.input+"/*.png"))
+    path_in = args.input
+    # Check if it's a image or directory
+    if  ".png" in path_in.split('/')[-1]:
+        lst_images = [path_in]
+    else:
+        lst_images = natsorted(glob.glob(args.input+"/*.png"))
     MyfilteGabor = GaborFilter()
-    TotalFalsePositive,TotalTruePositive,TotalBBGT = 0,0,0
+    TotalFalsePositive,TotalTruePositive,TotalBBGT,TotalFalseNegative = 0,0,0,0
 
     for path_image in lst_images:
 
@@ -51,10 +56,11 @@ if __name__ == '__main__':
 
 
         # Calculate the iou
-        TruePositive, FalsePositive = verifDetection(GT_BBs=GroundTruth_BB,DT_BBs=Detected_BB,threshold=0.6)
+        TruePositive, FalsePositive, FalseNegative = verifDetection(GT_BBs=GroundTruth_BB,DT_BBs=Detected_BB,threshold=0.6)
         TotalFalsePositive+=FalsePositive
         TotalTruePositive+=TruePositive
-        print(path_image,TruePositive,FalsePositive)
+        TotalFalseNegative+=FalseNegative
+        print(path_image,TruePositive,FalsePositive,FalseNegative)
 
         # If you type "--vis"
         if args.vis:
@@ -69,6 +75,7 @@ if __name__ == '__main__':
     print("Accuracy: ",TotalTruePositive/TotalBBGT)
     print("Falses positives: ",TotalFalsePositive)
     print("Trues positives: ",TotalTruePositive)
+    print("False negative: ", TotalFalseNegative)
 
 
 

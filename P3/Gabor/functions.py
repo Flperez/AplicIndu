@@ -22,7 +22,7 @@ def process(image, filters):
 def load_reg(path):
     fs = cv2.FileStorage(path,cv2.FILE_STORAGE_READ)
     rect = fs.getNode("rectangles")
-    rect = rect.mat().reshape(-1,4)
+    rect = rect.mat().T.reshape(-1,4)
     rect[:,2]+= rect[:, 0]
     rect[:,3]+= rect[:, 1]
 
@@ -60,6 +60,18 @@ def contained(A, B):
             and (corner[0] <= B[2] and corner[1] <= B[3])):
             return True
 
+    corners = [[B[0], B[1]], [B[0], B[3]], [B[1], B[3]], [B[2], B[1]]]
+    for corner in corners:
+        if ((corner[0] >= A[0] and corner[1] >= A[1])
+            and (corner[0] <= A[2] and corner[1] <= A[3])):
+            return True
+
+    if A[0]<B[0] and A[2]>B[2] and B[1]<A[1] and B[3]>A[3]:
+        return True
+
+    if B[0]<A[0] and B[2]>A[2] and A[1]<B[1] and A[3]>B[3]:
+        return True
+
     return False
 
 def calculateIoU(boxA,boxB):
@@ -82,16 +94,31 @@ def calculateIoU(boxA,boxB):
 
 
 def verifDetection(GT_BBs,DT_BBs,threshold=0.6):
-    TruePositive=0
+    TruePositive,TruePositivep,FalsePositive,FalseNegative = 0,0,0,0
 
     if GT_BBs.size == 0:
         FalsePositive = len(DT_BBs)
     else:
         for GT_BB in GT_BBs:
+            flag_TP=False
+            cntIOU=0
             for DT_BB in DT_BBs:
-                if calculateIoU(DT_BB,GT_BB)>threshold:
-                    TruePositive+=1
+                iou =calculateIoU(DT_BB,GT_BB)
 
-        FalsePositive=len(DT_BBs)-TruePositive
+                if iou>threshold:
+                    flag_TP=True
+                    cntIOU+=1
+                    TruePositive += 1
+                    TruePositivep+=1
 
-    return TruePositive, FalsePositive
+            if cntIOU>1:
+                TruePositive-=(cntIOU-1)
+
+            if not flag_TP:
+                FalseNegative+=1
+        if GT_BBs.shape[0]<DT_BBs.shape[0]:
+            FalsePositive+=(DT_BBs.shape[0]-TruePositivep)
+
+
+
+    return TruePositive, FalsePositive,FalseNegative
