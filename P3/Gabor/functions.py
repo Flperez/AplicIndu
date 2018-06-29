@@ -22,7 +22,11 @@ def process(image, filters):
 def load_reg(path):
     fs = cv2.FileStorage(path,cv2.FILE_STORAGE_READ)
     rect = fs.getNode("rectangles")
-    return rect.mat().reshape(-1,4)
+    rect = rect.mat().reshape(-1,4)
+    rect[:,2]+= rect[:, 0]
+    rect[:,3]+= rect[:, 1]
+
+    return rect
 
 
 
@@ -34,22 +38,60 @@ def getBoxes(mask):
         if (12 < w < 100 and 12 < h < 80) or (20 < w < 400 and 4 < h < 50):
             box = np.array([x,y,x+w,y+h])
             boxes.append(box)
+    boxes = np.asarray(boxes,dtype=int)
     return boxes
 
-def drawBoundingBoxes(image,boxes,color=(255,0,0)):
+def drawBoundingBoxes(image,boxes,color=(255,0,0),thickness=2):
     if len(image.shape)==2:
         out = cv2.cvtColor(image,cv2.cvtColor(cv2.COLOR_GRAY2BGR))
     else:
         out = image.copy()
-    for box in boxes:
-        cv2.rectangle(out, (box[0], box[1]), ( box[2], box[3]), color, 2)
+    if boxes.size!=0:
+        for box in boxes:
+            cv2.rectangle(out, (box[0], box[1]), ( box[2], box[3]), color,thickness=thickness)
     return out
 
-def calculateIoU(BB1,BB2):
-
-    return IoU
 
 
-def verifDetection(GT_BBs,DT_BBs,threshold):
+def contained(A, B):
+    corners = [[A[0],A[1]],[A[0],A[3]],[A[1],A[3]],[A[2],A[1]]]
+    for corner in corners:
+        if ((corner[0] >= B[0] and corner[1] >= B[1])
+            and (corner[0] <= B[2] and corner[1] <= B[3])):
+            return True
+
+    return False
+
+def calculateIoU(boxA,boxB):
+    '''
+    https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+    '''
+    if contained(boxA, boxB) == False:
+        iou = 0
+    else:
+        # determine the (x, y)-coordinates of the intersection rectangle
+        xA = max(boxA[0], boxB[0])
+        yA = max(boxA[1], boxB[1])
+        xB = min(boxA[2], boxB[2])
+        yB = min(boxA[3], boxB[3])
+        interArea = (xB - xA) * (yB - yA)
+        boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        iou = interArea / float(boxAArea)
+
+    return iou
+
+
+def verifDetection(GT_BBs,DT_BBs,threshold=0.6):
+    TruePositive=0
+
+    if GT_BBs.size == 0:
+        FalsePositive = len(DT_BBs)
+    else:
+        for GT_BB in GT_BBs:
+            for DT_BB in DT_BBs:
+                if calculateIoU(DT_BB,GT_BB)>threshold:
+                    TruePositive+=1
+
+        FalsePositive=len(DT_BBs)-TruePositive
 
     return TruePositive, FalsePositive
