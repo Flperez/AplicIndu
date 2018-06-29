@@ -67,25 +67,15 @@ def contained(A, B):
             and (corner[0] <= B[2] and corner[1] <= B[3])):
             return True
 
-    corners = [[B[0], B[1]], [B[0], B[3]], [B[1], B[3]], [B[2], B[1]]]
-    for corner in corners:
-        if ((corner[0] >= A[0] and corner[1] >= A[1])
-            and (corner[0] <= A[2] and corner[1] <= A[3])):
-            return True
-
     if A[0]<B[0] and A[2]>B[2] and B[1]<A[1] and B[3]>A[3]:
         return True
-
-    if B[0]<A[0] and B[2]>A[2] and A[1]<B[1] and A[3]>B[3]:
-        return True
-
     return False
 
 def calculateIoU(boxA,boxB):
     '''
     https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
     '''
-    if contained(boxA, boxB) == False:
+    if (contained(boxA, boxB) or contained(boxB,boxA)) == False:
         iou = 0
     else:
         # determine the (x, y)-coordinates of the intersection rectangle
