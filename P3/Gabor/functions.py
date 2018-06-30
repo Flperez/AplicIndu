@@ -2,10 +2,11 @@ import numpy as np
 import cv2
 
 ############# GABOR FILTER FUNCTIONS #############
+'''
+ https://gist.github.com/odebeir/5237529
+'''
 def GaborFilter(ksize=51,sigma=4.0,lambd=10.0,gamma=1,psi=0):
-    '''
-     https://gist.github.com/odebeir/5237529
-    '''
+
     filters = []
     ksize = ksize
     for theta in np.arange(0, np.pi, np.pi / 16):

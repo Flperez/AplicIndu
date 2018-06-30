@@ -2,13 +2,13 @@ import argparse
 import glob
 from natsort import natsorted
 import os
+import matplotlib.pyplot as plt
 from functions import *
 
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True, help="Path folder with img and .reg")
-    ap.add_argument("--output", required=False, help="Path folder with result")
     ap.add_argument("--vis", action="store_true", help="Visualize results")
     args = ap.parse_args()
 
@@ -20,6 +20,7 @@ if __name__ == '__main__':
         lst_images = natsorted(glob.glob(args.input+"/*.png"))
     MyfilteGabor = GaborFilter()
     TotalFalsePositive,TotalTruePositive,TotalBBGT,TotalFalseNegative = 0,0,0,0
+    print("PATH TO FILE\t\t\t\tTruePositive\tFalsePositive\tFalseNegative")
 
     for path_image in lst_images:
 
@@ -33,11 +34,11 @@ if __name__ == '__main__':
         (thresh, im_bw) = cv2.threshold(proccess_image, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
         # Apply Morphology functions
-        kernel_filter = np.ones((5, 5), np.uint8)
-        kernel_fix = np.ones((3,3),np.uint8)
-        erosion = cv2.erode(im_bw, kernel_filter, iterations=2)
-        dilation = cv2.dilate(erosion, kernel_filter, iterations=2)
-        ero2 = cv2.erode(dilation, kernel_fix, iterations=1)
+        kernel = np.ones((5, 5), np.uint8)
+        erosion = cv2.erode(im_bw, kernel, iterations=2)
+        dilation = cv2.dilate(erosion, kernel, iterations=2)
+        kernel = np.ones((3, 3), np.uint8)
+        ero2 = cv2.erode(dilation, kernel, iterations=1)
 
 
         # Get the bounding boxes
