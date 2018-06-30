@@ -1,0 +1,6 @@
+pandas
+numpy
+opencv-python
+hmmlearn
+sklearn
+natsort
